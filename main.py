@@ -121,7 +121,8 @@ def validation(model: nn.Module, criterion, valid_loader) -> Dict[str, float]:
             outputs = model(inputs)
             loss = criterion(outputs, targets)
             losses.append(loss.item())
-            dice += [get_dice(targets, (outputs > 0.5).float()).item()]
+            outputs_sigmoid = torch.sigmoid(outputs)
+            dice += [get_dice(targets, (outputs_sigmoid > 0.5).float()).item()]
 
         valid_loss = np.mean(losses)  # type: float
 
@@ -218,6 +219,7 @@ def train(args,
             valid_losses.append(valid_loss)
             if valid_loss < best_valid_loss:
                 import shutil
+                print(f'Save epoch {epoch}, valid loss : {valid_loss}')
                 best_valid_loss = valid_loss
                 shutil.copy(str(model_path), str(best_model_path))
         except KeyboardInterrupt:

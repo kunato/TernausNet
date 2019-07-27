@@ -1,4 +1,4 @@
-from main import HumanSegmentationDataset, variable
+from main import HumanSegmentationDataset, variable, load_image
 import torch
 import numpy as np
 import cv2
@@ -26,7 +26,6 @@ def get_model(model_name, fold):
 def visualize(full_image, mask, show_light=True, show_base=True):
     mask = np.tile(mask, (3, 1, 1))
     mask = np.moveaxis(mask, 0, -1)
-    full_image = np.moveaxis(full_image, 0, -1)
     if full_image is not None and show_light:
         print(full_image.shape, mask.shape)
         light_heat = cv2.addWeighted(full_image, 0.6, mask, 0.4, 0)
@@ -36,8 +35,16 @@ def visualize(full_image, mask, show_light=True, show_base=True):
     if full_image is not None and show_base:
         cv2.imshow('image', full_image)
         cv2.imshow('mask', mask)
-    if show_light or show_base:
-        cv2.waitKey()
+    cv2.waitKey(0)
+
+def load_raw_img(file_path, idx):
+    with open(file_path, 'r') as f:
+        fgs = f.readlines()
+        bg = fgs[idx].strip().replace('/matting/', '/clip_img/').replace(
+            '/matting_0', '/clip_0').replace('.png', '.jpg')
+        img = load_image(bg)
+        return img
+
 
 
 def eval():
@@ -49,8 +56,12 @@ def eval():
 
     model = get_model(args.model, args.fold)
     print('model loaded')
+
+    input_file_list = f'val_{args.fold}.txt'
+
+
     loader = DataLoader(
-        dataset=HumanSegmentationDataset(f'val_{args.fold}.txt'),
+        dataset=HumanSegmentationDataset(input_file_list),
         shuffle=False,
         batch_size=1,
         num_workers=1,
@@ -59,9 +70,7 @@ def eval():
 
     with torch.no_grad():
         for batch_num, (inputs, gt_mask) in enumerate(tqdm(loader)):
-            print(inputs)
             input_img = (inputs[0].data.cpu().numpy() * 255).astype(np.uint8)
-            print(input_img[0, :, :])
             # cv2.imwrite(f'{batch_num}_test.png', input_img[0, :,:])
             inputs = variable(inputs, volatile=False)
             outputs = model(inputs)
@@ -69,9 +78,9 @@ def eval():
                 outputs = torch.sigmoid(outputs)
             out_mask = (outputs.data.cpu().numpy() * 255).astype(np.uint8)
             for i, result_mask in enumerate(out_mask):
-                input = (inputs[i].data.cpu().numpy() * 255).astype(np.uint8)
+                raw_img = load_raw_img(input_file_list, batch_num * 1 + i)
                 cv2.imwrite(f'result/{batch_num}_{i}.png', result_mask[0, :, :])
-                # visualize(input, result_mask)
+                visualize(raw_img, result_mask)
     print(args.model)
 
 
