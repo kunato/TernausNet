@@ -14,6 +14,7 @@ nonlinearity = nn.ReLU
 
 
 class DecoderBlock(nn.Module):
+
     def __init__(self, in_channels, n_filters):
         super().__init__()
 
@@ -23,8 +24,12 @@ class DecoderBlock(nn.Module):
         self.relu1 = nonlinearity(inplace=True)
 
         # B, C/4, H, W -> B, C/4, H, W
-        self.deconv2 = nn.ConvTranspose2d(in_channels // 4, in_channels // 4, 3,
-                                          stride=2, padding=1, output_padding=1)
+        self.deconv2 = nn.ConvTranspose2d(in_channels // 4,
+                                          in_channels // 4,
+                                          3,
+                                          stride=2,
+                                          padding=1,
+                                          output_padding=1)
         self.norm2 = nn.BatchNorm2d(in_channels // 4)
         self.relu2 = nonlinearity(inplace=True)
 
@@ -45,7 +50,9 @@ class DecoderBlock(nn.Module):
         x = self.relu3(x)
         return x
 
+
 class LinkNet34(nn.Module):
+
     def __init__(self, num_classes, num_channels=3):
         super().__init__()
         assert num_channels == 3, "num channels not used now. to use changle first conv layer to support num channels other then 3"
@@ -102,6 +109,7 @@ class LinkNet34(nn.Module):
 
         return f5
 
+
 def dice_loss(preds, trues, weight=None, is_average=True):
     num = preds.size(0)
     preds = preds.view(num, -1)
@@ -114,29 +122,38 @@ def dice_loss(preds, trues, weight=None, is_average=True):
     scores = 2. * (intersection + 1) / (preds.sum(1) + trues.sum(1) + 1)
 
     if is_average:
-        score = scores.sum()/num
+        score = scores.sum() / num
         return torch.clamp(score, 0., 1.)
     else:
         return scores
+
 
 # def dice_clamp(preds, trues, is_average=True):
 #     preds = torch.round(preds)
 #     return dice_loss(preds, trues, is_average=is_average)
 
+
 class DiceLoss(nn.Module):
+
     def __init__(self, size_average=True):
         super().__init__()
         self.size_average = size_average
 
     def forward(self, input, target, weight=None):
-        return 1-dice_loss(F.sigmoid(input), target, weight=weight, is_average=self.size_average)
+        return 1 - dice_loss(F.sigmoid(input),
+                             target,
+                             weight=weight,
+                             is_average=self.size_average)
+
 
 class BCEDiceLoss(nn.Module):
+
     def __init__(self, size_average=True):
         super().__init__()
         self.size_average = size_average
         self.dice = DiceLoss(size_average=size_average)
 
     def forward(self, input, target, weight=None):
-        return nn.modules.loss.BCEWithLogitsLoss(size_average=self.size_average, weight=weight)(input, target)
+        return nn.BCEWithLogitsLoss(size_average=self.size_average,
+                                    weight=weight)(input, target)
         # return nn.modules.loss.BCEWithLogitsLoss(size_average=self.size_average, weight=weight)(input, target) + self.dice(input, target, weight=weight)

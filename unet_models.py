@@ -13,6 +13,7 @@ def concat(xs):
 
 
 class Conv3BN(nn.Module):
+
     def __init__(self, in_: int, out: int, bn=False):
         super().__init__()
         self.conv = conv3x3(in_, out)
@@ -28,6 +29,7 @@ class Conv3BN(nn.Module):
 
 
 class UNetModule(nn.Module):
+
     def __init__(self, in_: int, out: int):
         super().__init__()
         self.l1 = Conv3BN(in_, out)
@@ -40,6 +42,7 @@ class UNetModule(nn.Module):
 
 
 class ConvRelu(nn.Module):
+
     def __init__(self, in_: int, out: int):
         super().__init__()
         self.conv = conv3x3(in_, out)
@@ -52,6 +55,7 @@ class ConvRelu(nn.Module):
 
 
 class UNet11(nn.Module):
+
     def __init__(self, num_classes=1, num_filters=32):
         super().__init__()
         self.pool = nn.MaxPool2d(2, 2)
@@ -66,11 +70,16 @@ class UNet11(nn.Module):
         self.conv5s = self.encoder[16]
         self.conv5 = self.encoder[18]
 
-        self.center = DecoderBlock(num_filters * 8 * 2, num_filters * 8 * 2, num_filters * 8)
-        self.dec5 = DecoderBlock(num_filters * (16 + 8), num_filters * 8 * 2, num_filters * 8)
-        self.dec4 = DecoderBlock(num_filters * (16 + 8), num_filters * 8 * 2, num_filters * 4)
-        self.dec3 = DecoderBlock(num_filters * (8 + 4), num_filters * 4 * 2, num_filters * 2)
-        self.dec2 = DecoderBlock(num_filters * (4 + 2), num_filters * 2 * 2, num_filters)
+        self.center = DecoderBlock(num_filters * 8 * 2, num_filters * 8 * 2,
+                                   num_filters * 8)
+        self.dec5 = DecoderBlock(num_filters * (16 + 8), num_filters * 8 * 2,
+                                 num_filters * 8)
+        self.dec4 = DecoderBlock(num_filters * (16 + 8), num_filters * 8 * 2,
+                                 num_filters * 4)
+        self.dec3 = DecoderBlock(num_filters * (8 + 4), num_filters * 4 * 2,
+                                 num_filters * 2)
+        self.dec2 = DecoderBlock(num_filters * (4 + 2), num_filters * 2 * 2,
+                                 num_filters)
         self.dec1 = ConvRelu(num_filters * (2 + 1), num_filters)
 
         self.final = nn.Conv2d(num_filters, num_classes, kernel_size=1)
@@ -96,20 +105,25 @@ class UNet11(nn.Module):
 
 
 class DecoderBlock(nn.Module):
+
     def __init__(self, in_channels, middle_channels, out_channels):
         super().__init__()
 
         self.block = nn.Sequential(
             ConvRelu(in_channels, middle_channels),
-            nn.ConvTranspose2d(middle_channels, out_channels, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.ReLU(inplace=True)
-        )
+            nn.ConvTranspose2d(middle_channels,
+                               out_channels,
+                               kernel_size=3,
+                               stride=2,
+                               padding=1,
+                               output_padding=1), nn.ReLU(inplace=True))
 
     def forward(self, x):
         return self.block(x)
 
 
 class Loss:
+
     def __init__(self, dice_weight=1):
         self.nll_loss = nn.BCELoss()
         self.dice_weight = dice_weight
