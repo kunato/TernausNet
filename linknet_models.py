@@ -6,7 +6,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torchvision import models
 from torch import nn
-import torch.nn.functional as F
 import math
 import torch.utils.model_zoo as model_zoo
 
@@ -140,7 +139,7 @@ class DiceLoss(nn.Module):
         self.size_average = size_average
 
     def forward(self, input, target, weight=None):
-        return 1 - dice_loss(F.sigmoid(input),
+        return 1 - dice_loss(torch.sigmoid(input),
                              target,
                              weight=weight,
                              is_average=self.size_average)
@@ -154,6 +153,8 @@ class BCEDiceLoss(nn.Module):
         self.dice = DiceLoss(size_average=size_average)
 
     def forward(self, input, target, weight=None):
+        # return nn.BCEWithLogitsLoss(size_average=self.size_average,
+        #                             weight=weight)(input, target)
         return nn.BCEWithLogitsLoss(size_average=self.size_average,
-                                    weight=weight)(input, target)
-        # return nn.modules.loss.BCEWithLogitsLoss(size_average=self.size_average, weight=weight)(input, target) + self.dice(input, target, weight=weight)
+                                    weight=weight)(input, target) + self.dice(
+                                        input, target, weight=weight)
