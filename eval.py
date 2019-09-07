@@ -1,4 +1,4 @@
-from main import HumanSegmentationDataset, variable, load_image
+from main import PeopleSegmentationDataset, variable, load_image
 import torch
 import numpy as np
 import cv2
@@ -61,7 +61,7 @@ def eval():
 
 
     loader = DataLoader(
-        dataset=HumanSegmentationDataset(input_file_list),
+        dataset=PeopleSegmentationDataset(input_file_list),
         shuffle=False,
         batch_size=1,
         num_workers=1,
@@ -74,8 +74,6 @@ def eval():
             # cv2.imwrite(f'{batch_num}_test.png', input_img[0, :,:])
             inputs = variable(inputs, volatile=False)
             outputs = model(inputs)
-            if args.model == 'linknet':
-                outputs = torch.sigmoid(outputs)
             out_mask = (outputs.data.cpu().numpy() * 255).astype(np.uint8)
             for i, result_mask in enumerate(out_mask):
                 raw_img = load_raw_img(input_file_list, batch_num * 1 + i)

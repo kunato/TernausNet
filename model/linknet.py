@@ -3,6 +3,7 @@ all credits to @nizhib
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 from torchvision import models
 from torch import nn
@@ -106,8 +107,7 @@ class LinkNet34(nn.Module):
         f4 = self.finalrelu2(f3)
         f5 = self.finalconv3(f4)
 
-        return f5
-
+        return torch.sigmoid(f5)
 
 def dice_loss(preds, trues, weight=None, is_average=True):
     num = preds.size(0)
@@ -139,7 +139,7 @@ class DiceLoss(nn.Module):
         self.size_average = size_average
 
     def forward(self, input, target, weight=None):
-        return 1 - dice_loss(torch.sigmoid(input),
+        return 1 - dice_loss(input,
                              target,
                              weight=weight,
                              is_average=self.size_average)
@@ -155,6 +155,6 @@ class BCEDiceLoss(nn.Module):
     def forward(self, input, target, weight=None):
         # return nn.BCEWithLogitsLoss(size_average=self.size_average,
         #                             weight=weight)(input, target)
-        return nn.BCEWithLogitsLoss(size_average=self.size_average,
+        return nn.BCELoss(size_average=self.size_average,
                                     weight=weight)(input, target) + self.dice(
                                         input, target, weight=weight)

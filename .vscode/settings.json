@@ -1,3 +1,7 @@
 {
-    "python.pythonPath": "/home/kunato/miniconda3/envs/ml/bin/python"
+    "python.pythonPath": "/home/kunato/miniconda3/envs/ml/bin/python",
+    "python.linting.pylintArgs": [
+        "--errors-only",
+        "--generated-members=numpy.* ,torch.* ,cv2.* , cv.*"
+        ]
 }
